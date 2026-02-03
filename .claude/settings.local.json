@@ -4,7 +4,9 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: 个人公司助手\n\n功能：\n- 文章总结：支持文本/图片/PDF，关键词提取\n- 读书笔记：完整总结、要点提炼、思维导图、行动清单\n- 会议纪要：录音转录（系统声音/麦克风）、说话人识别\n\n技术栈：Vue 3 + Express + 通义千问 API\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: 个人公司助手\n\n功能：\n- 文章总结：支持文本/图片/PDF，关键词提取\n- 读书笔记：完整总结、要点提炼、思维导图、行动清单\n- 会议纪要：录音转录（系统声音/麦克风）、说话人识别\n\n技术栈：Vue 3 + Express + 通义千问 API\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ]
   }
 }
