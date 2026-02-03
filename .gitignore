@@ -5,7 +5,7 @@ node_modules/
 .env
 
 # 自签名证书
-server/certs/
+certs/
 
 # 系统文件
 .DS_Store
@@ -22,3 +22,7 @@ npm-debug.log*
 
 # 构建产物
 dist/
+
+# 旧目录
+client/
+server/
