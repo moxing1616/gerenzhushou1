@@ -277,8 +277,8 @@ speechSupported.value = !!SpeechRecognition
 
 const realtimeText = computed(() => realtimeFinalText.value + realtimeInterimText.value)
 
-// 生产环境使用环境变量，开发环境使用本地地址
-const API_BASE = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':3006/api')
+// Vercel 部署时 API 在同域名下的 /api 路径
+const API_BASE = '/api'
 const canSubmitArticle = computed(() => articleContent.value.trim() || articleImages.value.length || articleFiles.value.length)
 const canSubmitBook = computed(() => bookContent.value.trim() || bookName.value.trim() || bookImages.value.length || bookFiles.value.length)
 const voiceSummaryTypeLabel = computed(() => voiceSummaryTypes.find(t => t.value === voiceSummaryType.value)?.label || '总结结果')
@@ -674,10 +674,18 @@ async function processVoice() {
     // 有音频文件，先转录
     voiceLoading.value = true; voiceError.value = ''; voiceTranscript.value = ''
     try {
-      const formData = new FormData()
-      formData.append('audio', audioFile.value.blob, audioFile.value.name)
-      formData.append('enableSpeaker', enableSpeakerDetection.value ? 'true' : 'false')
-      const res = await fetch(API_BASE + '/transcribe', { method: 'POST', body: formData })
+      // 将音频转为 base64
+      const reader = new FileReader()
+      const audioBase64 = await new Promise((resolve) => {
+        reader.onload = (e) => resolve(e.target.result)
+        reader.readAsDataURL(audioFile.value.blob)
+      })
+
+      const res = await fetch(API_BASE + '/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audio: audioBase64, enableSpeaker: enableSpeakerDetection.value })
+      })
       const data = await res.json()
 
       if (data.error) {
@@ -741,13 +749,20 @@ async function transcribeChunk(blob) {
   console.log('发送音频转录, 大小:', blob.size, 'bytes')
 
   try {
-    const formData = new FormData()
-    formData.append('audio', blob, 'chunk.webm')
-    formData.append('enableSpeaker', enableSpeakerDetection.value ? 'true' : 'false')
+    // 将音频转为 base64
+    const reader = new FileReader()
+    const audioBase64 = await new Promise((resolve) => {
+      reader.onload = (e) => resolve(e.target.result)
+      reader.readAsDataURL(blob)
+    })
 
     realtimeInterimText.value = '正在识别...'
 
-    const res = await fetch(API_BASE + '/transcribe', { method: 'POST', body: formData })
+    const res = await fetch(API_BASE + '/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audio: audioBase64, enableSpeaker: enableSpeakerDetection.value })
+    })
     const data = await res.json()
 
     console.log('转录返回:', data)
