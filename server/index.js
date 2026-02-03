@@ -13,7 +13,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  credentials: true
+}));
 app.use(express.json({ limit: '50mb' }));
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
@@ -573,39 +576,43 @@ app.post('/api/voice-summary', async (req, res) => {
   }
 });
 
-// 生成自签名证书
-const certDir = path.join(__dirname, 'certs');
-if (!fs.existsSync(certDir)) {
-  fs.mkdirSync(certDir);
-}
-
-const keyPath = path.join(certDir, 'key.pem');
-const certPath = path.join(certDir, 'cert.pem');
-
-// 如果证书不存在，生成新的
-if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
-  console.log('生成自签名证书...');
-  try {
-    execSync(`openssl req -x509 -newkey rsa:2048 -keyout "${keyPath}" -out "${certPath}" -days 365 -nodes -subj "/CN=localhost"`, { stdio: 'inherit' });
-  } catch (e) {
-    console.log('无法自动生成证书，请手动安装 openssl 或使用 HTTP 模式');
-  }
-}
-
 const PORT = process.env.PORT || 3006;
 
-// 启动服务器
-if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
-  const httpsOptions = {
-    key: fs.readFileSync(keyPath),
-    cert: fs.readFileSync(certPath)
-  };
-  https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
-    console.log(`HTTPS 服务器运行在 https://0.0.0.0:${PORT}`);
+// Railway 等云平台使用 HTTP（平台提供 HTTPS）
+if (process.env.RAILWAY_ENVIRONMENT || process.env.RENDER || process.env.NODE_ENV === 'production') {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`HTTP 服务器运行在端口 ${PORT}`);
   });
 } else {
-  // 回退到 HTTP
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`HTTP 服务器运行在 http://0.0.0.0:${PORT}`);
-  });
+  // 本地开发使用 HTTPS
+  const certDir = path.join(__dirname, 'certs');
+  if (!fs.existsSync(certDir)) {
+    fs.mkdirSync(certDir);
+  }
+
+  const keyPath = path.join(certDir, 'key.pem');
+  const certPath = path.join(certDir, 'cert.pem');
+
+  if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
+    console.log('生成自签名证书...');
+    try {
+      execSync(`openssl req -x509 -newkey rsa:2048 -keyout "${keyPath}" -out "${certPath}" -days 365 -nodes -subj "/CN=localhost"`, { stdio: 'inherit' });
+    } catch (e) {
+      console.log('无法自动生成证书，使用 HTTP 模式');
+    }
+  }
+
+  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+    const httpsOptions = {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath)
+    };
+    https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
+      console.log(`HTTPS 服务器运行在 https://0.0.0.0:${PORT}`);
+    });
+  } else {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`HTTP 服务器运行在 http://0.0.0.0:${PORT}`);
+    });
+  }
 }

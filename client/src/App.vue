@@ -277,7 +277,8 @@ speechSupported.value = !!SpeechRecognition
 
 const realtimeText = computed(() => realtimeFinalText.value + realtimeInterimText.value)
 
-const API_BASE = window.location.protocol + '//' + window.location.hostname + ':3006/api'
+// 生产环境使用环境变量，开发环境使用本地地址
+const API_BASE = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':3006/api')
 const canSubmitArticle = computed(() => articleContent.value.trim() || articleImages.value.length || articleFiles.value.length)
 const canSubmitBook = computed(() => bookContent.value.trim() || bookName.value.trim() || bookImages.value.length || bookFiles.value.length)
 const voiceSummaryTypeLabel = computed(() => voiceSummaryTypes.find(t => t.value === voiceSummaryType.value)?.label || '总结结果')
